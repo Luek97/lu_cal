@@ -297,13 +297,6 @@ export const PlanView: React.FC<PlanViewProps> = ({
     }
   };
 
-  const handleEventClick = (event: CalendarEvent) => {
-    if (!wasDragging.current) {
-      onEditEvent(event);
-    }
-    wasDragging.current = false;
-  };
-
   const toggleEventComplete = (event: CalendarEvent) => {
     const newIsCompleted = !event.isCompleted;
     onUpdateEvent({ ...event, isCompleted: newIsCompleted });
@@ -513,9 +506,8 @@ export const PlanView: React.FC<PlanViewProps> = ({
               <div 
                 key={event.id}
                 onPointerDown={(e) => handlePointerDown(e, event)}
-                onClick={() => handleEventClick(event)}
                 className={`
-                  relative pl-2 border-l-2 border-transparent pb-4 last:pb-0 touch-manipulation cursor-pointer group transition-all
+                  relative pl-2 border-l-2 border-transparent pb-4 last:pb-0 touch-manipulation group transition-all
                   ${draggingEvent?.id === event.id ? 'opacity-30' : ''}
                   ${event.isCompleted ? 'opacity-60 bg-gray-50 rounded-lg p-2' : ''}
                 `}

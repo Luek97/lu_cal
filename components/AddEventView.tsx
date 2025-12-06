@@ -212,7 +212,7 @@ export const AddEventView: React.FC<AddEventViewProps> = ({ existingEvents, init
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-24 left-0 right-0 px-6 flex space-x-4">
+      <div className="fixed bottom-6 left-0 right-0 px-6 flex space-x-4">
         <button 
           onClick={onCancel}
           className="flex-1 py-4 rounded-xl bg-white border border-muji-border text-muji-text font-medium shadow-sm active:scale-95 transition-transform"
