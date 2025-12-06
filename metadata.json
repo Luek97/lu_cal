@@ -1,0 +1,7 @@
+{
+  "name": "Luke_Calendar",
+  "description": "A minimalist, Muji-style mobile planner app featuring schedule management, event categorization, and a habit tracker with photo journaling.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
