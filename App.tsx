@@ -72,9 +72,9 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muji-bg flex justify-center">
-      <div className="w-full max-w-3xl bg-white min-h-screen shadow-sm relative flex flex-col border-x border-muji-border">
-        <div className="flex-1 relative">
+    <div className="min-h-screen bg-muji-bg flex justify-center items-start sm:py-8">
+      <div className="w-full max-w-5xl bg-white min-h-screen sm:min-h-[800px] sm:h-auto sm:rounded-3xl sm:shadow-2xl relative flex flex-col border-x border-muji-border overflow-hidden">
+        <div className="flex-1 relative h-full flex flex-col">
           {currentView === 'plan' && (
             <PlanView 
               events={events} 

@@ -69,5 +69,51 @@ export const storageService = {
     const newGoals = goals.filter(g => g.id !== id);
     localStorage.setItem(GOALS_KEY, JSON.stringify(newGoals));
     return newGoals;
+  },
+
+  exportData: () => {
+    const events = localStorage.getItem(EVENTS_KEY);
+    const goals = localStorage.getItem(GOALS_KEY);
+    
+    const data = {
+      events: events ? JSON.parse(events) : [],
+      goals: goals ? JSON.parse(goals) : [],
+      exportedAt: Date.now()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `muji-planner-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  importData: async (file: File) => {
+    return new Promise<void>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const data = JSON.parse(content);
+          
+          if (data.events) {
+            localStorage.setItem(EVENTS_KEY, JSON.stringify(data.events));
+          }
+          if (data.goals) {
+            localStorage.setItem(GOALS_KEY, JSON.stringify(data.goals));
+          }
+          resolve();
+        } catch (err) {
+          console.error('Failed to import data', err);
+          reject(err);
+        }
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsText(file);
+    });
   }
 };

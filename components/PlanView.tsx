@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { CalendarEvent, BucketGoal } from '../types';
-import { ChevronLeft, ChevronRight, Circle, X, ChevronDown, ChevronUp, CheckCircle, Pencil, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Circle, X, ChevronDown, ChevronUp, CheckCircle, Pencil, Trash2, Settings, Download, Upload } from 'lucide-react';
 import { BucketListView } from './BucketListView';
+import { storageService } from '../services/storageService';
 
 interface PlanViewProps {
   events: CalendarEvent[];
@@ -36,14 +37,17 @@ export const PlanView: React.FC<PlanViewProps> = ({
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   
-  // Picker State
+  // Picker & Menu State
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [pickerYear, setPickerYear] = useState(currentDate.getFullYear());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Drag & Drop State
   const [draggingEvent, setDraggingEvent] = useState<CalendarEvent | null>(null);
   const [draggingGoal, setDraggingGoal] = useState<BucketGoal | null>(null);
   const [dragPos, setDragPos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Refs for drag logic
   const wasDragging = useRef(false);
@@ -77,6 +81,26 @@ export const PlanView: React.FC<PlanViewProps> = ({
       d.setDate(d.getDate() + 7);
     }
     setCurrentDate(d);
+  };
+
+  const handleExport = () => {
+    storageService.exportData();
+    setIsSettingsOpen(false);
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (window.confirm('Importing will overwrite current data. Continue?')) {
+        await storageService.importData(file);
+        window.location.reload(); // Reload to reflect changes
+      }
+    }
+    setIsSettingsOpen(false);
   };
 
   const days = useMemo(() => {
@@ -170,7 +194,6 @@ export const PlanView: React.FC<PlanViewProps> = ({
   };
 
   // --- Drag & Drop Logic (Events) ---
-  // Events use Long Press to allow scrolling the list
   const handlePointerDown = (e: React.PointerEvent, event: CalendarEvent) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
 
@@ -186,11 +209,15 @@ export const PlanView: React.FC<PlanViewProps> = ({
       setDragPos({ x: clientX, y: clientY });
       wasDragging.current = true;
       if (navigator.vibrate) navigator.vibrate(50);
+      
+      // Capture pointer to track outside
+      if (containerRef.current) {
+        containerRef.current.setPointerCapture(e.pointerId);
+      }
     }, 250); 
   };
 
   // --- Drag & Drop Logic (Goals) ---
-  // Goals use Slide-to-Drag (Immediate drag after threshold) because scrolling is disabled on items
   const handleGoalPointerDown = (e: React.PointerEvent, goal: BucketGoal) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     
@@ -220,6 +247,10 @@ export const PlanView: React.FC<PlanViewProps> = ({
             setDragPos({ x: e.clientX, y: e.clientY });
             potentialDragGoal.current = null; // Drag started, clear potential
             if (navigator.vibrate) navigator.vibrate(50);
+            
+            if (containerRef.current) {
+              containerRef.current.setPointerCapture(e.pointerId);
+            }
         }
         return;
     }
@@ -247,12 +278,23 @@ export const PlanView: React.FC<PlanViewProps> = ({
     // Clean up Goal potential drag
     potentialDragGoal.current = null;
 
+    // Release pointer capture
+    if (containerRef.current && (draggingEvent || draggingGoal)) {
+        try {
+            if (containerRef.current.hasPointerCapture(e.pointerId)) {
+                containerRef.current.releasePointerCapture(e.pointerId);
+            }
+        } catch (err) {
+            // Ignore error if pointer was already released
+        }
+    }
+
     // Handle Drop
     if (draggingEvent) {
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
       
-      // Check for trash drop
-      const trashElement = elements.find(el => el.getAttribute('data-trash-zone'));
+      // Check for trash drop - Using closest for mobile reliability
+      const trashElement = elements.find(el => el.closest('[data-trash-zone]'));
       if (trashElement) {
         onDeleteEvent(draggingEvent.id);
         setDraggingEvent(null);
@@ -260,10 +302,13 @@ export const PlanView: React.FC<PlanViewProps> = ({
         return;
       }
 
-      // Check for date drop
-      const dateElement = elements.find(el => el.getAttribute('data-date'));
+      // Check for date drop - Using closest
+      const dateElement = elements.find(el => el.closest('[data-date]'));
       if (dateElement) {
-        const newDate = dateElement.getAttribute('data-date');
+        // We need to get the attribute from the element or its ancestor
+        const target = dateElement.closest('[data-date]');
+        const newDate = target?.getAttribute('data-date');
+        
         if (newDate && newDate !== draggingEvent.date) {
           onUpdateEvent({ ...draggingEvent, date: newDate });
           const [y, m, d] = newDate.split('-').map(Number);
@@ -273,9 +318,11 @@ export const PlanView: React.FC<PlanViewProps> = ({
       setDraggingEvent(null);
     } else if (draggingGoal) {
         const elements = document.elementsFromPoint(e.clientX, e.clientY);
-        const dateElement = elements.find(el => el.getAttribute('data-date'));
+        const dateElement = elements.find(el => el.closest('[data-date]'));
         if (dateElement) {
-            const newDate = dateElement.getAttribute('data-date');
+            const target = dateElement.closest('[data-date]');
+            const newDate = target?.getAttribute('data-date');
+            
             if (newDate) {
                 // Create new event from goal, inheriting size
                 const newEvent: CalendarEvent = {
@@ -335,15 +382,19 @@ export const PlanView: React.FC<PlanViewProps> = ({
   // Check if "Today" is in the current view
   const isTodayInView = days.some(d => d && isSameDay(d, new Date()));
 
+  // Determine if we should block scrolling (when dragging)
+  const isDragging = !!draggingEvent || !!draggingGoal;
+
   return (
     <div 
-      className="flex flex-col h-full animate-fadeIn relative select-none overflow-hidden"
+      ref={containerRef}
+      className={`flex flex-col h-full animate-fadeIn relative select-none overflow-hidden ${isDragging ? 'touch-none' : ''}`}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 bg-muji-bg z-10 shrink-0">
+      <div className="flex items-center justify-between p-4 bg-muji-bg z-10 shrink-0 relative">
         <button 
           onClick={() => {
             setPickerYear(year);
@@ -360,6 +411,30 @@ export const PlanView: React.FC<PlanViewProps> = ({
           <button onClick={handleNext} className="p-2 rounded-full hover:bg-white transition-colors">
             <ChevronRight className="w-6 h-6 text-muji-subtext" />
           </button>
+          <div className="relative">
+            <button onClick={() => setIsSettingsOpen(!isSettingsOpen)} className="p-2 rounded-full hover:bg-white transition-colors">
+                <Settings className="w-5 h-5 text-muji-subtext" />
+            </button>
+            {isSettingsOpen && (
+                <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50 animate-fadeIn">
+                    <button onClick={handleExport} className="w-full text-left px-4 py-3 text-sm text-muji-text hover:bg-gray-50 flex items-center gap-2">
+                        <Download className="w-4 h-4" />
+                        Backup Data
+                    </button>
+                    <button onClick={handleImportClick} className="w-full text-left px-4 py-3 text-sm text-muji-text hover:bg-gray-50 flex items-center gap-2 border-t border-gray-50">
+                        <Upload className="w-4 h-4" />
+                        Restore Data
+                    </button>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileImport} 
+                        className="hidden" 
+                        accept=".json"
+                    />
+                </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -523,7 +598,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                             e.stopPropagation();
                             toggleEventComplete(event);
                         }}
-                        className="mr-3 p-1 text-muji-subtext hover:text-muji-accent focus:outline-none"
+                        className="mr-3 p-1 text-muji-subtext hover:text-muji-accent focus:outline-none z-10 relative"
                      >
                         {event.isCompleted ? (
                             <CheckCircle className="w-5 h-5 text-muji-green" />
@@ -547,7 +622,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                      <button 
                          onPointerDown={(e) => e.stopPropagation()}
                          onClick={(e) => { e.stopPropagation(); onEditEvent(event); }}
-                         className="p-1.5 text-muji-subtext hover:bg-gray-100 rounded-full transition-colors"
+                         className="p-1.5 text-muji-subtext hover:bg-gray-100 rounded-full transition-colors z-10 relative"
                      >
                          <Pencil className="w-4 h-4" />
                      </button>
@@ -557,7 +632,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
                              e.stopPropagation(); 
                              onDeleteEvent(event.id); 
                          }}
-                         className="p-1.5 text-muji-subtext hover:text-muji-red hover:bg-red-50 rounded-full transition-colors"
+                         className="p-1.5 text-muji-subtext hover:text-muji-red hover:bg-red-50 rounded-full transition-colors z-10 relative"
                      >
                          <Trash2 className="w-4 h-4" />
                      </button>

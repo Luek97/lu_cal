@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { BucketGoal, EventSize } from '../types';
-import { Plus, Camera, Trash2, Check, Trophy, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Plus, Camera, Trash2, Check, Trophy, ChevronDown, ChevronUp, X, Image as ImageIcon, Maximize2 } from 'lucide-react';
 
 interface BucketListViewProps {
   goals: BucketGoal[];
@@ -291,6 +291,7 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
 
                         {/* Photo Action Btn */}
                         <button 
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handlePhotoClick(goal);
@@ -314,6 +315,7 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
 
                         {/* Plus Btn */}
                         <button
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                                 e.stopPropagation();
                                 handleIncrement(goal);
@@ -331,6 +333,7 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
                         
                         {/* Delete (Small) */}
                         <button 
+                            onPointerDown={(e) => e.stopPropagation()}
                             onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); }}
                             className="text-gray-300 hover:text-muji-red transition-colors p-1"
                         >
