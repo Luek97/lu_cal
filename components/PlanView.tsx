@@ -293,7 +293,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
     if (draggingEvent) {
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
       
-      // Check for trash drop - Using closest for mobile reliability
+      // Check for trash drop - Using closest to find parent container
       const trashElement = elements.find(el => el.closest('[data-trash-zone]'));
       if (trashElement) {
         onDeleteEvent(draggingEvent.id);
@@ -581,6 +581,8 @@ export const PlanView: React.FC<PlanViewProps> = ({
               <div 
                 key={event.id}
                 onPointerDown={(e) => handlePointerDown(e, event)}
+                onContextMenu={(e) => e.preventDefault()}
+                style={{ touchAction: 'pan-y' }}
                 className={`
                   relative pl-2 border-l-2 border-transparent pb-4 last:pb-0 touch-manipulation group transition-all
                   ${draggingEvent?.id === event.id ? 'opacity-30' : ''}
@@ -650,7 +652,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
       {/* Drag Ghost Element (Events) */}
       {draggingEvent && (
         <div 
-          className="fixed z-50 pointer-events-none bg-white p-4 rounded-xl shadow-2xl border border-muji-text w-64 opacity-90"
+          className="fixed z-50 pointer-events-none bg-white p-4 rounded-xl shadow-2xl border border-muji-text w-64 opacity-90 touch-none"
           style={{ 
             left: dragPos.x, 
             top: dragPos.y, 
@@ -668,7 +670,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
       {/* Drag Ghost Element (Goals) */}
       {draggingGoal && (
         <div 
-          className="fixed z-50 pointer-events-none bg-white p-4 rounded-xl shadow-2xl border border-muji-text w-64 opacity-90"
+          className="fixed z-50 pointer-events-none bg-white p-4 rounded-xl shadow-2xl border border-muji-text w-64 opacity-90 touch-none"
           style={{ 
             left: dragPos.x, 
             top: dragPos.y, 
