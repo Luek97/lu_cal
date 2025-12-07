@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { BucketGoal, EventSize } from '../types';
-import { Plus, Camera, Trash2, Check, Trophy, ChevronDown, ChevronUp, X, Image as ImageIcon, Maximize2 } from 'lucide-react';
+import { Plus, Camera, Trash2, Check, Trophy, ChevronDown, ChevronUp, X, Image as ImageIcon, Maximize2, CheckCircle2 } from 'lucide-react';
 
 interface BucketListViewProps {
   goals: BucketGoal[];
@@ -19,6 +19,7 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   
   const [newTitle, setNewTitle] = useState('');
   const [newTarget, setNewTarget] = useState('');
@@ -34,10 +35,15 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
 
   const MAX_GOALS = 5;
 
+  const activeGoals = goals.filter(g => g.currentCount < g.targetCount);
+  const completedGoals = goals.filter(g => g.currentCount >= g.targetCount);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newTarget) return;
-    if (goals.length >= MAX_GOALS) return;
+    
+    // Check limit against active goals only
+    if (activeGoals.length >= MAX_GOALS) return;
 
     const goal: BucketGoal = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -171,18 +177,19 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
           className="flex items-center space-x-1 text-xs font-bold text-muji-subtext tracking-widest uppercase hover:text-muji-text transition-colors"
         >
           <span>Goal Tracker</span>
-          <span className="text-[10px] font-normal opacity-70 ml-1">({goals.length}/{MAX_GOALS})</span>
+          <span className="text-[10px] font-normal opacity-70 ml-1">({activeGoals.length}/{MAX_GOALS})</span>
           {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
         </button>
         <button 
+           onPointerDown={(e) => e.stopPropagation()}
            onClick={() => { 
-             if (goals.length < MAX_GOALS) {
+             if (activeGoals.length < MAX_GOALS) {
                 setIsAdding(!isAdding); 
                 setIsExpanded(true); 
              }
            }}
-           disabled={goals.length >= MAX_GOALS}
-           className={`text-muji-subtext transition-colors ${goals.length >= MAX_GOALS ? 'opacity-30 cursor-not-allowed' : 'hover:text-muji-text'}`}
+           disabled={activeGoals.length >= MAX_GOALS}
+           className={`text-muji-subtext transition-colors ${activeGoals.length >= MAX_GOALS ? 'opacity-30 cursor-not-allowed' : 'hover:text-muji-text'}`}
         >
           <Plus className={`w-4 h-4 transition-transform ${isAdding ? 'rotate-45' : ''}`} />
         </button>
@@ -234,10 +241,10 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
         </form>
       )}
 
-      {/* Goal List Rows */}
+      {/* Active Goal List Rows */}
       {isExpanded && (
         <div className="space-y-2 max-h-[35vh] overflow-y-auto no-scrollbar pb-1">
-          {goals.map(goal => {
+          {activeGoals.map(goal => {
             const isCompleted = goal.currentCount >= goal.targetCount;
             const progress = Math.min(100, (goal.currentCount / goal.targetCount) * 100);
             const goalSize = goal.size || 'medium';
@@ -344,12 +351,54 @@ export const BucketListView: React.FC<BucketListViewProps> = ({
               </div>
             );
           })}
-          {goals.length === 0 && !isAdding && (
+          {activeGoals.length === 0 && !isAdding && (
             <div className="text-center py-4 text-xs text-muji-subtext bg-white/50 rounded-xl border border-dashed border-muji-border">
               Add a habit (Max {MAX_GOALS})
             </div>
           )}
         </div>
+      )}
+
+      {/* Completed Goals Section */}
+      {completedGoals.length > 0 && (
+          <div className="mt-4 pt-2 border-t border-dashed border-muji-border/50">
+               <button 
+                onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
+                className="flex items-center space-x-1 text-xs font-bold text-muji-subtext/70 tracking-widest uppercase hover:text-muji-subtext transition-colors mb-2"
+                >
+                <span>Completed</span>
+                <span className="text-[10px] font-normal opacity-70 ml-1">({completedGoals.length})</span>
+                {isCompletedExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+               </button>
+
+               {isCompletedExpanded && (
+                   <div className="space-y-2 opacity-60 hover:opacity-100 transition-opacity duration-300">
+                       {completedGoals.map(goal => (
+                           <div key={goal.id} className="flex items-center justify-between bg-stone-100 rounded-xl p-3 shadow-sm border border-transparent">
+                               <div className="flex items-center gap-2 overflow-hidden">
+                                   <CheckCircle2 className="w-4 h-4 text-muji-green shrink-0" />
+                                   <div className="flex flex-col min-w-0">
+                                       <span className="text-sm font-medium text-muji-text truncate line-through decoration-muji-subtext/50">{goal.title}</span>
+                                       {goal.reward && <span className="text-[10px] text-muji-orange truncate">{goal.reward}</span>}
+                                   </div>
+                               </div>
+                               <div className="flex items-center gap-2 shrink-0">
+                                    <div className="text-xs font-bold text-muji-green">
+                                        {goal.targetCount}/{goal.targetCount}
+                                    </div>
+                                    <button 
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); }}
+                                        className="text-gray-300 hover:text-muji-red transition-colors p-1"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                               </div>
+                           </div>
+                       ))}
+                   </div>
+               )}
+          </div>
       )}
 
       {/* Photo Viewer Modal */}

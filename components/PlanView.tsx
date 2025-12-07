@@ -293,15 +293,6 @@ export const PlanView: React.FC<PlanViewProps> = ({
     if (draggingEvent) {
       const elements = document.elementsFromPoint(e.clientX, e.clientY);
       
-      // Check for trash drop - Using closest to find parent container
-      const trashElement = elements.find(el => el.closest('[data-trash-zone]'));
-      if (trashElement) {
-        onDeleteEvent(draggingEvent.id);
-        setDraggingEvent(null);
-        if (navigator.vibrate) navigator.vibrate([50, 50]);
-        return;
-      }
-
       // Check for date drop - Using closest
       const dateElement = elements.find(el => el.closest('[data-date]'));
       if (dateElement) {
@@ -554,7 +545,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
       </div>
 
       {/* Daily Timeline / List */}
-      <div className="flex-1 bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.03)] p-6 overflow-y-auto mt-2 z-10 pb-6">
+      <div className="flex-1 bg-white rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.03)] p-6 overflow-y-auto mt-2 z-10 pb-6 relative">
         <div className="flex items-center justify-between mb-6">
           <div className="flex flex-col">
              <span className="text-xs text-muji-subtext uppercase tracking-widest">SELECTED</span>
@@ -570,7 +561,7 @@ export const PlanView: React.FC<PlanViewProps> = ({
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 pb-24">
           {eventsForSelectedDate.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-muji-subtext opacity-50">
               <Circle className="w-8 h-8 mb-2 stroke-1" />
@@ -647,6 +638,9 @@ export const PlanView: React.FC<PlanViewProps> = ({
             ))
           )}
         </div>
+
+        {/* Trash Drop Zone (inside the relative container for correct positioning) */}
+        {/* Removed this block */}
       </div>
 
       {/* Drag Ghost Element (Events) */}
@@ -682,17 +676,6 @@ export const PlanView: React.FC<PlanViewProps> = ({
                 <span className="text-xs text-muji-subtext">{draggingGoal.currentCount}/{draggingGoal.targetCount}</span>
             </div>
             <div className="mt-2 text-xs text-blue-500 font-medium">Drop to add event</div>
-        </div>
-      )}
-
-      {/* Trash Drop Zone */}
-      {draggingEvent && (
-        <div 
-          data-trash-zone="true"
-          className="absolute bottom-6 left-6 right-6 h-24 border-2 border-dashed border-red-300 bg-red-50/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-40 animate-fadeIn"
-        >
-          <Trash2 className="w-8 h-8 text-red-400 mb-1" />
-          <span className="text-red-400 text-xs font-bold tracking-wider">DELETE EVENT</span>
         </div>
       )}
     </div>
