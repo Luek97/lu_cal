@@ -72,32 +72,34 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto h-screen overflow-hidden bg-muji-bg relative shadow-2xl">
-      <div className="h-full relative">
-        {currentView === 'plan' && (
-          <PlanView 
-            events={events} 
-            goals={goals}
-            onAddClick={handleAddEventClick} 
-            onUpdateEvent={handleUpdateEvent}
-            onEditEvent={handleEditEventClick}
-            onDeleteEvent={handleDeleteEvent}
-            onAddGoal={handleAddGoal}
-            onUpdateGoal={handleUpdateGoal}
-            onDeleteGoal={handleDeleteGoal}
-          />
-        )}
-        
-        {currentView === 'add' && (
-          <AddEventView 
-            existingEvents={events}
-            initialDate={preSelectedDate}
-            initialEvent={editingEvent}
-            onSave={handleSaveEvent} 
-            onDelete={handleDeleteEvent}
-            onCancel={handleCancelAdd} 
-          />
-        )}
+    <div className="min-h-screen bg-muji-bg flex justify-center">
+      <div className="w-full max-w-3xl bg-white min-h-screen shadow-sm relative flex flex-col border-x border-muji-border">
+        <div className="flex-1 relative">
+          {currentView === 'plan' && (
+            <PlanView 
+              events={events} 
+              goals={goals}
+              onAddClick={handleAddEventClick} 
+              onUpdateEvent={handleUpdateEvent}
+              onEditEvent={handleEditEventClick}
+              onDeleteEvent={handleDeleteEvent}
+              onAddGoal={handleAddGoal}
+              onUpdateGoal={handleUpdateGoal}
+              onDeleteGoal={handleDeleteGoal}
+            />
+          )}
+          
+          {currentView === 'add' && (
+            <AddEventView 
+              existingEvents={events}
+              initialDate={preSelectedDate}
+              initialEvent={editingEvent}
+              onSave={handleSaveEvent} 
+              onDelete={handleDeleteEvent}
+              onCancel={handleCancelAdd} 
+            />
+          )}
+        </div>
       </div>
     </div>
   );

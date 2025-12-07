@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { CalendarEvent, EventSize } from '../types';
-import { ChevronDown, Calendar, Type, ChevronLeft, ChevronRight, X, Trash2 } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, X, Trash2 } from 'lucide-react';
 
 interface AddEventViewProps {
   existingEvents: CalendarEvent[];
@@ -97,7 +97,7 @@ export const AddEventView: React.FC<AddEventViewProps> = ({ existingEvents, init
   };
 
   return (
-    <div className="h-full flex flex-col bg-white animate-fadeIn pb-24 relative">
+    <div className="h-full flex flex-col bg-white animate-fadeIn relative">
       {/* Header */}
       <div className="px-6 py-6 border-b border-muji-bg flex justify-between items-center">
         <h2 className="text-xl font-light text-muji-text">
@@ -208,23 +208,24 @@ export const AddEventView: React.FC<AddEventViewProps> = ({ existingEvents, init
             )}
           </div>
 
-        </form>
-      </div>
+          {/* Action Buttons - Inline */}
+          <div className="flex space-x-4 pt-4 pb-8">
+            <button 
+              type="button"
+              onClick={onCancel}
+              className="flex-1 py-4 rounded-xl bg-white border border-muji-border text-muji-text font-medium shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              className="flex-1 py-4 rounded-xl bg-muji-text text-white font-medium shadow-lg hover:opacity-90 active:scale-95 transition-all"
+            >
+              Save
+            </button>
+          </div>
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 left-0 right-0 px-6 flex space-x-4">
-        <button 
-          onClick={onCancel}
-          className="flex-1 py-4 rounded-xl bg-white border border-muji-border text-muji-text font-medium shadow-sm active:scale-95 transition-transform"
-        >
-          Cancel
-        </button>
-        <button 
-          onClick={handleSubmit}
-          className="flex-1 py-4 rounded-xl bg-muji-text text-white font-medium shadow-lg active:scale-95 transition-transform"
-        >
-          Save
-        </button>
+        </form>
       </div>
 
       {/* Calendar Modal Overlay */}
